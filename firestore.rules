@@ -1,0 +1,50 @@
+rules_version = '2';
+
+// ============================================================
+// Firestore 보안 규칙
+// 원칙: 누구나(비로그인 포함) 읽기는 가능, 쓰기는 관리자(Firebase Auth 로그인)만 가능.
+// - allowedEmployees: 로그인 화면에서 사번 대조를 위해 읽기 공개.
+// - checklistProgress: 팀장이 별도 로그인 없이 사번만으로 기록하므로 생성/수정은 누구나 허용.
+// Firebase 콘솔 > Firestore Database > 규칙 탭에 이 내용을 붙여넣고 게시(Publish)하세요.
+// ============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /allowedEmployees/{employeeId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /guides/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /notices/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /comparisonItems/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /checklistItems/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /contacts/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /checklistProgress/{docId} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if request.auth != null;
+    }
+  }
+}

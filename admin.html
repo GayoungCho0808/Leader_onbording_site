@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>관리자 대시보드 · 팀장 온보딩</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" as="style" crossorigin
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --bg:#F8F5FB;
+    --ink:#1E1024;
+    --accent:#833B9B;       /* CU Purple */
+    --accent-lime:#9BDD2A;  /* CU Lime Green */
+    --slate:#6B5C74;
+    --success:#5C8A1F;
+  }
+  body{ font-family:'Pretendard', -apple-system, sans-serif; background:var(--bg); color:var(--ink); }
+  .tab-active{ color:var(--ink) !important; border-color:var(--accent) !important; }
+  .hidden{ display:none !important; }
+  .brand-strip{ height:3px; background:linear-gradient(90deg, var(--accent), var(--accent-lime)); }
+  .btn-primary{ background:var(--accent); color:#fff; }
+  .btn-primary:hover{ background:#6F2F85; }
+  .btn-add{ background:var(--accent-lime); color:var(--ink); }
+  .btn-add:hover{ background:#8bc924; }
+</style>
+</head>
+<body class="min-h-screen">
+
+  <!-- 관리자 로그인 -->
+  <div id="admin-login-view" class="min-h-screen flex items-center justify-center px-6">
+    <div class="w-full max-w-sm">
+      <p class="text-sm text-[var(--slate)] mb-2">조직문화팀 전용</p>
+      <h1 class="text-2xl font-semibold mb-8">관리자 로그인</h1>
+      <form id="admin-login-form" class="space-y-3">
+        <div>
+          <label class="block text-sm font-medium text-[var(--slate)] mb-1">아이디 (이메일)</label>
+          <input id="admin-email" type="email" required
+            class="w-full border border-slate-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[var(--slate)] mb-1">비밀번호</label>
+          <input id="admin-password" type="password" required
+            class="w-full border border-slate-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" />
+        </div>
+        <p id="admin-login-error" class="hidden text-sm text-red-600">아이디 또는 비밀번호가 올바르지 않습니다.</p>
+        <button type="submit" class="w-full btn-primary rounded-lg py-3 font-medium mt-2 transition-colors">로그인</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 관리자 대시보드 -->
+  <div id="admin-dash-view" class="hidden min-h-screen">
+    <header class="border-b border-slate-200 sticky top-0 bg-[var(--bg)]/95 backdrop-blur z-10">
+      <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div>
+          <p class="text-xs text-[var(--slate)]">팀장 온보딩</p>
+          <p class="text-sm font-semibold">관리자 대시보드</p>
+        </div>
+        <button id="admin-logout-btn" class="text-sm text-slate-400 hover:text-slate-600">로그아웃</button>
+      </div>
+      <nav class="max-w-5xl mx-auto px-6 flex gap-6 overflow-x-auto text-sm">
+        <button class="admin-tab-btn tab-active border-b-2 border-transparent py-3 whitespace-nowrap" data-target="tab-employees">사번 관리</button>
+        <button class="admin-tab-btn border-b-2 border-transparent py-3 whitespace-nowrap text-slate-500" data-target="tab-guides">가이드</button>
+        <button class="admin-tab-btn border-b-2 border-transparent py-3 whitespace-nowrap text-slate-500" data-target="tab-notices">공지사항</button>
+        <button class="admin-tab-btn border-b-2 border-transparent py-3 whitespace-nowrap text-slate-500" data-target="tab-comparison">Before/After</button>
+        <button class="admin-tab-btn border-b-2 border-transparent py-3 whitespace-nowrap text-slate-500" data-target="tab-checklist">체크리스트</button>
+        <button class="admin-tab-btn border-b-2 border-transparent py-3 whitespace-nowrap text-slate-500" data-target="tab-contacts">담당자</button>
+      </nav>
+      <div class="brand-strip"></div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-6 py-8">
+
+      <!-- 사번 관리 -->
+      <section id="tab-employees" class="admin-tab-panel space-y-8">
+        <div id="seed-data-box" class="border border-dashed border-[var(--accent)] rounded-lg p-5 bg-[var(--accent)]/5 flex items-center justify-between gap-4">
+          <div>
+            <h3 class="font-semibold text-sm">처음 배포하셨나요?</h3>
+            <p class="text-xs text-slate-500 mt-1">가이드·공지·Before/After·체크리스트·담당자·샘플 사번(2건)을 한 번에 채워넣습니다. 이미 데이터가 있다면 누르지 않아도 됩니다.</p>
+          </div>
+          <button id="seed-data-btn" class="text-sm btn-primary rounded px-4 py-2 whitespace-nowrap">샘플 데이터 채우기</button>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+          <form id="employee-add-form" class="border border-slate-200 rounded-lg p-5 space-y-3 bg-white/50">
+            <h3 class="font-semibold text-sm">단건 등록</h3>
+            <input id="employee-id-field" placeholder="사번" required
+              class="w-full border border-slate-300 rounded px-3 py-2 text-sm" />
+            <input id="employee-name-field" placeholder="이름 (선택)"
+              class="w-full border border-slate-300 rounded px-3 py-2 text-sm" />
+            <button class="text-sm btn-primary rounded px-4 py-2">등록</button>
+          </form>
+
+          <form id="employee-bulk-form" class="border border-slate-200 rounded-lg p-5 space-y-3 bg-white/50">
+            <h3 class="font-semibold text-sm">일괄 등록 (콤마 구분)</h3>
+            <textarea id="employee-bulk-field" rows="4" placeholder="예: 10023, 10045:박서준, 10078
+사번만 써도 되고, &quot;사번:이름&quot; 형식으로 이름도 같이 넣을 수 있습니다."
+              class="w-full border border-slate-300 rounded px-3 py-2 text-sm"></textarea>
+            <button class="text-sm btn-primary rounded px-4 py-2">일괄 등록</button>
+          </form>
+        </div>
+
+        <div class="border border-slate-200 rounded-lg p-5 space-y-3 bg-white/50">
+          <div>
+            <h3 class="font-semibold text-sm">엑셀 / CSV 파일로 일괄 등록</h3>
+            <p class="text-xs text-slate-400 mt-1">첫 번째 열: 사번, 두 번째 열: 이름 (헤더 행이 있어도 자동으로 인식합니다). .xlsx, .xls, .csv 지원.</p>
+          </div>
+          <input id="employee-excel-input" type="file" accept=".xlsx,.xls,.csv"
+            class="w-full text-sm border border-slate-300 rounded px-3 py-2 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-[var(--accent)] file:text-white file:text-xs" />
+          <p id="employee-excel-status" class="text-xs text-slate-500"></p>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-sm">등록된 사번 목록</h3>
+            <div class="flex items-center gap-3">
+              <span id="employee-count" class="text-xs text-slate-400"></span>
+              <button id="employee-delete-all-btn" class="text-xs text-red-500 hover:underline">전체 삭제</button>
+            </div>
+          </div>
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-slate-200 text-left text-xs text-slate-400">
+                <th class="pb-2 font-medium">사번</th>
+                <th class="pb-2 font-medium">이름</th>
+                <th class="pb-2"></th>
+              </tr>
+            </thead>
+            <tbody id="employee-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 가이드 CRUD -->
+      <section id="tab-guides" class="admin-tab-panel hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-semibold text-sm">온보딩 가이드</h3>
+            <p class="text-xs text-slate-400 mt-1">시스템 사용법 / 규정 / 복리후생 / 기타로 분류해서 등록하세요.</p>
+          </div>
+          <button id="guide-add-btn" class="text-sm btn-add font-medium rounded px-4 py-2">+ 새 가이드</button>
+        </div>
+        <div id="guide-admin-list" class="space-y-3"></div>
+      </section>
+
+      <!-- 공지사항 CRUD -->
+      <section id="tab-notices" class="admin-tab-panel hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold text-sm">공지사항</h3>
+          <button id="notice-add-btn" class="text-sm btn-add font-medium rounded px-4 py-2">+ 새 공지</button>
+        </div>
+        <div id="notice-admin-list" class="space-y-3"></div>
+      </section>
+
+      <!-- Before/After CRUD -->
+      <section id="tab-comparison" class="admin-tab-panel hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold text-sm">팀원 vs 팀장 비교 항목</h3>
+          <button id="comparison-add-btn" class="text-sm btn-add font-medium rounded px-4 py-2">+ 새 항목</button>
+        </div>
+        <div id="comparison-admin-list" class="space-y-3"></div>
+      </section>
+
+      <!-- 체크리스트 CRUD -->
+      <section id="tab-checklist" class="admin-tab-panel hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold text-sm">체크리스트 과제</h3>
+          <button id="checklist-add-btn" class="text-sm btn-add font-medium rounded px-4 py-2">+ 새 과제</button>
+        </div>
+        <div id="checklist-admin-list" class="space-y-3"></div>
+      </section>
+
+      <!-- 담당자 CRUD -->
+      <section id="tab-contacts" class="admin-tab-panel hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-semibold text-sm">업무 담당자</h3>
+            <p class="text-xs text-slate-400 mt-1">팀장이 업무별로 문의할 담당자 연락처입니다.</p>
+          </div>
+          <button id="contact-add-btn" class="text-sm btn-add font-medium rounded px-4 py-2">+ 새 담당자</button>
+        </div>
+        <div id="contact-admin-list" class="space-y-3"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module" src="./admin.js"></script>
+</body>
+</html>
